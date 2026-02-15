@@ -1,0 +1,376 @@
+{
+  "name": "Daily News to Instagram Image Poster",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "42cd1dde-2c59-40b0-ba01-7a7eb8eed88d",
+      "name": "Daily 9 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "currentDate",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "newsQuery",
+              "value": "What are the top 3 trending news stories today? Provide headline, brief summary, and key details for each.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "adb3fdd5-b336-40d2-aabf-a095192ba8c0",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=featch top 3 news",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a news content specialist and social media expert. Analyze the news content provided and extract exactly 3 news stories. For each story, create: 1) A compelling headline (max 100 chars), 2) A brief summary suitable for Instagram caption (max 200 chars), 3) A detailed image generation prompt that describes a visually striking image representing the news story (be specific about composition, style, colors, and mood). Return the structured data with all three news items."
+        }
+      },
+      "id": "55d1236b-e541-4614-bf02-e8b176ef852e",
+      "name": "Analyze News & Generate Prompts",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        928,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "75854647-3133-494e-850d-1a8326c0a53a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        944,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"news_items\": [\n    {\n      \"headline\": \"Breaking news headline here\",\n      \"summary\": \"Brief summary for Instagram caption\",\n      \"image_prompt\": \"Detailed DALL-E image generation prompt describing the visual representation\"\n    },\n    {\n      \"headline\": \"Second news headline\",\n      \"summary\": \"Second news summary\",\n      \"image_prompt\": \"Second image prompt\"\n    },\n    {\n      \"headline\": \"Third news headline\",\n      \"summary\": \"Third news summary\",\n      \"image_prompt\": \"Third image prompt\"\n    }\n  ]\n}"
+      },
+      "id": "6f802523-4c20-4a47-aa69-98c115ac189a",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "id": "ee19e4aa-c5d0-4ae4-a704-67e266598c9b",
+      "name": "Limit to 3 News",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.news_items",
+        "options": {}
+      },
+      "id": "603b289a-423d-4def-9152-60aa6852c16c",
+      "name": "Split News Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.image_prompt }}",
+        "options": {
+          "dalleQuality": "hd",
+          "size": "1024x1024"
+        }
+      },
+      "id": "ae585a9d-f91d-43bf-93fa-460f09ce4e21",
+      "name": "Generate Image with DALL-E",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        1728,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "TRveAXkZcSeebhEP",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "image_url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "caption",
+              "value": "={{ $json.headline + '\\n\\n' + $json.summary + '\\n\\n#news #trending #dailynews' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "instagram_business_account_id",
+              "value": "INSTA_ID_HERE",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2f34ca28-95d8-49f9-b8dc-87a2ddad9bf7",
+      "name": "Prepare Instagram Post Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1952,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v21.0",
+        "node": "={{ $json.instagram_business_account_id }}",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.image_url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json.caption }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "5fa0e6fb-af9b-44ec-9472-6cfea165f91d",
+      "name": "Post to Instagram",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/top-headlines",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "country",
+              "value": "us"
+            },
+            {
+              "name": "pageSize",
+              "value": "10"
+            },
+            {
+              "name": "apiKey",
+              "value": "API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13b5e626-bd87-45fa-bbb5-5c57e2a856a5",
+      "name": "Fetch Top News from News API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 9 AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Fetch Top News from News API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze News & Generate Prompts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze News & Generate Prompts",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze News & Generate Prompts": {
+      "main": [
+        [
+          {
+            "node": "Limit to 3 News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 3 News": {
+      "main": [
+        [
+          {
+            "node": "Split News Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split News Items": {
+      "main": [
+        [
+          {
+            "node": "Generate Image with DALL-E",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image with DALL-E": {
+      "main": [
+        [
+          {
+            "node": "Prepare Instagram Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Instagram Post Data": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Top News from News API": {
+      "main": [
+        [
+          {
+            "node": "Analyze News & Generate Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0b81512f-efa3-434e-9bff-c9ee9bede596",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "46db605b7485c27284eed9e0a211d6c0bcfa047b3c706add13529b598d2d3057"
+  },
+  "id": "559qeC22R27Hh1Fm",
+  "tags": []
+}
