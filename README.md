@@ -1,7 +1,3 @@
-Perfect 👍
-Here is a **GitHub-ready README.md version** — clean, professional, properly formatted, and polished for your repository.
-
-You can directly copy-paste this into your `README.md` file.
 
 ---
 
